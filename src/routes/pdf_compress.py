@@ -127,10 +127,10 @@ def get_compression_info():
                 'description': 'Remove duplicação e aplica compressão lossless. Mantém qualidade visual.',
                 'recommended_for': 'Documentos importantes onde a qualidade visual é prioridade'
             },
-            'maximum': {
-                'name': 'Máxima',
-                'description': 'Compressão máxima com redução de qualidade de imagem. Maior redução de tamanho.',
-                'recommended_for': 'Arquivos para armazenamento ou quando o tamanho é mais importante que a qualidade'
+            "maximum": {
+                "name": "Máxima",
+                "description": "Compressão lossless no nível máximo. Maior redução de tamanho mantendo qualidade.",
+                "recommended_for": "Máxima economia de espaço com processamento seguro e confiável"
             }
         },
         'max_file_size': f'{MAX_FILE_SIZE // (1024*1024)}MB',

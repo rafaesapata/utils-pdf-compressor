@@ -77,8 +77,8 @@ class PDFCompressor:
     @staticmethod
     def compress_pdf_maximum(input_path: str, output_path: str) -> Tuple[bool, str, dict]:
         """
-        Compressão máxima: Remove duplicação + compressão lossless máxima + redução de qualidade de imagem
-        Máxima redução de tamanho com alguma perda de qualidade visual
+        Compressão máxima: Remove duplicação + compressão lossless máxima
+        Foca na máxima redução de tamanho com compressão segura
         """
         try:
             original_size = PDFCompressor.get_file_size(input_path)
@@ -88,15 +88,15 @@ class PDFCompressor:
             
             # Aplicar compressão lossless máxima em todas as páginas
             for page in writer.pages:
-                page.compress_content_streams(level=9)  # Máximo nível de compressão
-                
-                # Reduzir qualidade das imagens para 60%
-                for img in page.images:
+                try:
+                    page.compress_content_streams(level=9)  # Máximo nível de compressão
+                except Exception as compress_error:
+                    # Se falhar compressão máxima, tenta nível médio
                     try:
-                        img.replace(img.image, quality=60)
+                        page.compress_content_streams(level=6)
                     except:
-                        # Se não conseguir reduzir qualidade, continua sem erro
-                        pass
+                        # Se ainda falhar, pula esta página
+                        continue
             
             # Remover objetos duplicados e órfãos
             writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
