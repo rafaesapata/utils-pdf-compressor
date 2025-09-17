@@ -323,13 +323,62 @@
         }
 
         .error-message {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
+            background: #fee2e2;
             color: #dc2626;
             padding: 1rem;
             border-radius: 8px;
             margin-top: 1rem;
             display: none;
+        }
+
+        .footer {
+            margin-top: 4rem;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-info {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .version {
+            background: #2563eb;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .build-info {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .footer-copyright {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
         }
 
         .file-info {
@@ -425,8 +474,8 @@
                         <div class="option-title">Compressão Máxima</div>
                     </div>
                     <div class="option-description">
-                        Compressão lossless no nível máximo. Maior redução de tamanho mantendo qualidade.
-                        Recomendado para máxima economia de espaço com segurança.
+                        Compressão agressiva com redução de qualidade de imagens (até 70%). Máxima economia de espaço.
+                        Recomendado para arquivos onde o tamanho é mais importante que a qualidade visual.
                     </div>
                 </div>
             </div>
@@ -691,5 +740,17 @@
             errorMessage.style.display = 'none';
         }
     </script>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-info">
+                <span class="version">v2.0.0</span>
+                <span class="build-info">Build: 17/09/2025 22:45 UTC</span>
+            </div>
+            <div class="footer-copyright">
+                © 2025 UDS Tecnologia - Todos os direitos reservados
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

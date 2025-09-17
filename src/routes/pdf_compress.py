@@ -129,8 +129,8 @@ def get_compression_info():
             },
             "maximum": {
                 "name": "Máxima",
-                "description": "Compressão lossless no nível máximo. Maior redução de tamanho mantendo qualidade.",
-                "recommended_for": "Máxima economia de espaço com processamento seguro e confiável"
+                "description": "Compressão agressiva com redução de qualidade de imagens (até 70%). Máxima economia de espaço.",
+                "recommended_for": "Arquivos onde o tamanho é mais importante que a qualidade visual"
             }
         },
         'max_file_size': f'{MAX_FILE_SIZE // (1024*1024)}MB',

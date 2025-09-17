@@ -112,8 +112,8 @@ class PDFCompressor:
     @staticmethod
     def compress_pdf_maximum(input_path: str, output_path: str) -> Tuple[bool, str, dict]:
         """
-        Compressão máxima: Remove duplicação + compressão lossless máxima
-        Foca na máxima redução de tamanho com compressão segura
+        Compressão máxima: Redução agressiva com perda de qualidade até 70%
+        Foca na máxima redução de tamanho aceitando perda de qualidade
         """
         try:
             original_size = PDFCompressor.get_file_size(input_path)
@@ -121,20 +121,70 @@ class PDFCompressor:
             # Criar writer a partir do PDF original
             writer = PdfWriter(clone_from=input_path)
             
-            # Aplicar compressão lossless máxima em todas as páginas
+            # Aplicar compressão agressiva em todas as páginas
             for page in writer.pages:
                 try:
-                    page.compress_content_streams(level=9)  # Máximo nível de compressão
+                    # Compressão lossless máxima
+                    page.compress_content_streams(level=9)
+                    
+                    # Reduzir qualidade de imagens agressivamente (30% = 70% de perda)
+                    try:
+                        for img in page.images:
+                            try:
+                                if hasattr(img, 'image') and img.image is not None:
+                                    # Redução agressiva para máxima economia
+                                    img.replace(img.image, quality=30)
+                            except Exception as img_error:
+                                # Se falhar com qualidade 30, tenta 50
+                                try:
+                                    img.replace(img.image, quality=50)
+                                except:
+                                    # Se ainda falhar, continua sem compressão de imagem
+                                    continue
+                    except Exception as page_img_error:
+                        # Se não conseguir processar imagens da página, continua
+                        pass
+                        
                 except Exception as compress_error:
                     # Se falhar compressão máxima, tenta nível médio
                     try:
                         page.compress_content_streams(level=6)
+                        # Ainda tenta reduzir imagens mesmo com compressão menor
+                        try:
+                            for img in page.images:
+                                try:
+                                    if hasattr(img, 'image') and img.image is not None:
+                                        img.replace(img.image, quality=40)
+                                except:
+                                    continue
+                        except:
+                            pass
                     except:
                         # Se ainda falhar, pula esta página
                         continue
             
-            # Remover objetos duplicados e órfãos
+            # Remover objetos duplicados e órfãos (mais agressivo)
             writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+            
+            # Remover metadados desnecessários para economia adicional
+            try:
+                if writer.metadata:
+                    # Limpar completamente metadados para máxima economia
+                    writer.metadata = {}
+            except:
+                pass
+            
+            # Tentar remover anotações e elementos não essenciais
+            try:
+                for page in writer.pages:
+                    # Remover anotações se existirem
+                    if '/Annots' in page:
+                        try:
+                            del page['/Annots']
+                        except:
+                            pass
+            except:
+                pass
             
             # Salvar arquivo comprimido
             with open(output_path, 'wb') as output_file:
