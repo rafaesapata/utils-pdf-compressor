@@ -550,8 +550,7 @@
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
 
-        // Configurar data de deploy
-        document.getElementById('deployDate').textContent = new Date().toLocaleDateString('pt-BR');
+        // Data de deploy já está configurada no HTML
 
         // Event listeners para upload
         uploadArea.addEventListener('click', () => fileInput.click());
