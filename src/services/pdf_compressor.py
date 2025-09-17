@@ -37,74 +37,122 @@ class PDFCompressor:
     @staticmethod
     def compress_pdf_optimized(input_path: str, output_path: str) -> Tuple[bool, str, dict]:
         """
-        Compressão otimizada: Remove duplicação + compressão lossless avançada
-        Mantém qualidade visual com redução significativa de tamanho
+        Compressão otimizada: Usa Ghostscript com configurações balanceadas
+        Mantém boa qualidade visual com redução significativa de tamanho
         """
         try:
             original_size = PDFCompressor.get_file_size(input_path)
             
-            # Criar writer a partir do PDF original
-            writer = PdfWriter(clone_from=input_path)
-            
-            # Aplicar compressão lossless avançada em todas as páginas
-            for page in writer.pages:
-                try:
-                    # Compressão lossless no nível 8 (alto, mas não máximo)
-                    page.compress_content_streams(level=8)
-                    
-                    # Tentar reduzir qualidade de imagens levemente (90%) se possível
-                    try:
-                        for img in page.images:
-                            try:
-                                if hasattr(img, 'image') and img.image is not None:
-                                    # Redução muito leve na qualidade para manter visual
-                                    img.replace(img.image, quality=90)
-                            except:
-                                # Se falhar, continua sem compressão de imagem
-                                continue
-                    except:
-                        # Se não conseguir processar imagens, continua
-                        pass
-                        
-                except Exception as compress_error:
-                    # Se falhar compressão nível 8, tenta nível 6
-                    try:
-                        page.compress_content_streams(level=6)
-                    except:
-                        # Se ainda falhar, pula esta página
-                        continue
-            
-            # Remover objetos duplicados e órfãos (mais agressivo)
-            writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
-            
-            # Tentar remover metadados desnecessários
+            # USAR GHOSTSCRIPT COM CONFIGURAÇÕES OTIMIZADAS (menos agressivas que máxima)
             try:
-                if writer.metadata:
-                    # Manter apenas metadados essenciais
-                    essential_metadata = {}
-                    if '/Title' in writer.metadata:
-                        essential_metadata['/Title'] = writer.metadata['/Title']
-                    writer.metadata = essential_metadata
-            except:
-                pass
-            
-            # Salvar arquivo comprimido
-            with open(output_path, 'wb') as output_file:
-                writer.write(output_file)
-            
-            compressed_size = PDFCompressor.get_file_size(output_path)
-            reduction_percent = ((original_size - compressed_size) / original_size) * 100
-            
-            stats = {
-                'original_size': original_size,
-                'compressed_size': compressed_size,
-                'reduction_percent': reduction_percent,
-                'original_size_formatted': PDFCompressor.format_file_size(original_size),
-                'compressed_size_formatted': PDFCompressor.format_file_size(compressed_size),
-                'compression_type': 'Otimizada'
-            }
-            
-            return True, "Compressão otimizada realizada com sucesso", stats
+                # Comando ghostscript para compressão OTIMIZADA
+                cmd = [
+                    'gs',
+                    '-sDEVICE=pdfwrite',
+                    '-dCompatibilityLevel=1.4',
+                    '-dPDFSETTINGS=/ebook',  # Configuração balanceada (melhor que /screen)
+                    '-dNOPAUSE',
+                    '-dQUIET',
+                    '-dBATCH',
+                    '-dColorImageResolution=150',  # Resolução moderada (melhor qualidade)
+                    '-dGrayImageResolution=150',   # Resolução moderada
+                    '-dMonoImageResolution=300',   # Resolução boa para texto
+                    '-dColorImageDownsampleType=/Bicubic',
+                    '-dGrayImageDownsampleType=/Bicubic',
+                    '-dMonoImageDownsampleType=/Bicubic',
+                    '-dCompressPages=true',
+                    '-dUseFlateCompression=true',
+                    '-dOptimize=true',
+                    f'-sOutputFile={output_path}',
+                    input_path
+                ]
+                
+                # Executar ghostscript
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                
+                if result.returncode == 0 and os.path.exists(output_path):
+                    # Ghostscript funcionou!
+                    compressed_size = PDFCompressor.get_file_size(output_path)
+                    reduction_percent = ((original_size - compressed_size) / original_size) * 100
+                    
+                    stats = {
+                        'original_size': original_size,
+                        'compressed_size': compressed_size,
+                        'reduction_percent': reduction_percent,
+                        'original_size_formatted': PDFCompressor.format_file_size(original_size),
+                        'compressed_size_formatted': PDFCompressor.format_file_size(compressed_size),
+                        'compression_type': 'Otimizada'
+                    }
+                    
+                    return True, "Compressão otimizada realizada com sucesso", stats
+                else:
+                    # Se ghostscript falhar, usar fallback PyPDF
+                    raise Exception(f"Ghostscript falhou: {result.stderr}")
+                    
+            except Exception as gs_error:
+                # FALLBACK: PyPDF com compressão moderada se ghostscript falhar
+                writer = PdfWriter(clone_from=input_path)
+                
+                # Aplicar compressão moderada em todas as páginas
+                for page in writer.pages:
+                    try:
+                        # Compressão lossless no nível 6 (moderado)
+                        page.compress_content_streams(level=6)
+                        
+                        # Tentar reduzir qualidade de imagens moderadamente (85%) se possível
+                        try:
+                            for img in page.images:
+                                try:
+                                    if hasattr(img, 'image') and img.image is not None:
+                                        # Redução moderada na qualidade
+                                        img.replace(img.image, quality=85)
+                                except:
+                                    # Se falhar, continua sem compressão de imagem
+                                    continue
+                        except:
+                            # Se não conseguir processar imagens, continua
+                            pass
+                            
+                    except Exception as compress_error:
+                        # Se falhar compressão nível 6, tenta nível 4
+                        try:
+                            page.compress_content_streams(level=4)
+                        except:
+                            # Se ainda falhar, pula esta página
+                            continue
+                
+                # Remover objetos duplicados e órfãos
+                writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+                
+                # Manter metadados essenciais
+                try:
+                    if writer.metadata:
+                        essential_metadata = {}
+                        if '/Title' in writer.metadata:
+                            essential_metadata['/Title'] = writer.metadata['/Title']
+                        if '/Author' in writer.metadata:
+                            essential_metadata['/Author'] = writer.metadata['/Author']
+                        writer.metadata = essential_metadata
+                except:
+                    pass
+                
+                # Salvar arquivo comprimido
+                with open(output_path, 'wb') as output_file:
+                    writer.write(output_file)
+                
+                compressed_size = PDFCompressor.get_file_size(output_path)
+                reduction_percent = ((original_size - compressed_size) / original_size) * 100
+                
+                stats = {
+                    'original_size': original_size,
+                    'compressed_size': compressed_size,
+                    'reduction_percent': reduction_percent,
+                    'original_size_formatted': PDFCompressor.format_file_size(original_size),
+                    'compressed_size_formatted': PDFCompressor.format_file_size(compressed_size),
+                    'compression_type': 'Otimizada'
+                }
+                
+                return True, "Compressão otimizada realizada com sucesso (fallback)", stats
             
         except Exception as e:
             error_msg = PDFCompressor.sanitize_text(str(e))
