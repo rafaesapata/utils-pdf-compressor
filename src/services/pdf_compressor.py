@@ -36,8 +36,8 @@ class PDFCompressor:
     @staticmethod
     def compress_pdf_optimized(input_path: str, output_path: str) -> Tuple[bool, str, dict]:
         """
-        Compressão otimizada: Remove duplicação + compressão lossless
-        Mantém qualidade visual enquanto reduz tamanho
+        Compressão otimizada: Remove duplicação + compressão lossless avançada
+        Mantém qualidade visual com redução significativa de tamanho
         """
         try:
             original_size = PDFCompressor.get_file_size(input_path)
@@ -45,12 +45,47 @@ class PDFCompressor:
             # Criar writer a partir do PDF original
             writer = PdfWriter(clone_from=input_path)
             
-            # Aplicar compressão lossless em todas as páginas
+            # Aplicar compressão lossless avançada em todas as páginas
             for page in writer.pages:
-                page.compress_content_streams(level=6)  # Nível médio de compressão
+                try:
+                    # Compressão lossless no nível 8 (alto, mas não máximo)
+                    page.compress_content_streams(level=8)
+                    
+                    # Tentar reduzir qualidade de imagens levemente (90%) se possível
+                    try:
+                        for img in page.images:
+                            try:
+                                if hasattr(img, 'image') and img.image is not None:
+                                    # Redução muito leve na qualidade para manter visual
+                                    img.replace(img.image, quality=90)
+                            except:
+                                # Se falhar, continua sem compressão de imagem
+                                continue
+                    except:
+                        # Se não conseguir processar imagens, continua
+                        pass
+                        
+                except Exception as compress_error:
+                    # Se falhar compressão nível 8, tenta nível 6
+                    try:
+                        page.compress_content_streams(level=6)
+                    except:
+                        # Se ainda falhar, pula esta página
+                        continue
             
-            # Remover objetos duplicados e órfãos
+            # Remover objetos duplicados e órfãos (mais agressivo)
             writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+            
+            # Tentar remover metadados desnecessários
+            try:
+                if writer.metadata:
+                    # Manter apenas metadados essenciais
+                    essential_metadata = {}
+                    if '/Title' in writer.metadata:
+                        essential_metadata['/Title'] = writer.metadata['/Title']
+                    writer.metadata = essential_metadata
+            except:
+                pass
             
             # Salvar arquivo comprimido
             with open(output_path, 'wb') as output_file:

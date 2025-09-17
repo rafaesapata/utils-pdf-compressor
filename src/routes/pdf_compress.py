@@ -124,8 +124,8 @@ def get_compression_info():
         'compression_types': {
             'optimized': {
                 'name': 'Otimizada',
-                'description': 'Remove duplicação e aplica compressão lossless. Mantém qualidade visual.',
-                'recommended_for': 'Documentos importantes onde a qualidade visual é prioridade'
+                'description': 'Compressão avançada com redução significativa de tamanho. Mantém excelente qualidade visual.',
+                'recommended_for': 'Uso geral e documentos importantes onde qualidade e tamanho são importantes'
             },
             "maximum": {
                 "name": "Máxima",
