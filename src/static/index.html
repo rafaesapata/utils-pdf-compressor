@@ -680,7 +680,7 @@
                 <div id="merge-tab" class="tab-panel">
                     <h2 style="margin-bottom: 1rem; color: #1e293b;">Mesclagem de PDF</h2>
                     <p style="margin-bottom: 2rem; color: #64748b;">
-                        Combine múltiplos arquivos PDF em um único documento. 
+                        Combine múltiplos arquivos PDF e imagens PNG/JPG em um único documento PDF. 
                         Arraste os arquivos para reordenar conforme necessário.
                     </p>
 
@@ -688,10 +688,10 @@
                     <div class="upload-area" id="mergeUploadArea">
                         <div class="upload-icon">📁</div>
                         <div class="upload-text">
-                            <strong>Clique aqui ou arraste múltiplos PDFs</strong>
+                            <strong>Clique aqui ou arraste PDFs e imagens PNG/JPG</strong>
                             <br>Máximo 10 arquivos, 50MB cada
                         </div>
-                        <input type="file" id="mergeFileInput" multiple accept=".pdf" style="display: none;">
+                        <input type="file" id="mergeFileInput" multiple accept=".pdf,.png,.jpg,.jpeg" style="display: none;">
                     </div>
 
                     <!-- Lista de arquivos selecionados -->
@@ -1015,7 +1015,12 @@
             e.currentTarget.style.borderColor = '#d1d5db';
             e.currentTarget.style.backgroundColor = '#f9fafb';
             
-            const files = Array.from(e.dataTransfer.files).filter(file => file.type === 'application/pdf');
+            const files = Array.from(e.dataTransfer.files).filter(file => 
+                file.type === 'application/pdf' || 
+                file.type === 'image/png' || 
+                file.type === 'image/jpeg' || 
+                file.type === 'image/jpg'
+            );
             addMergeFiles(files);
         }
 
@@ -1026,7 +1031,7 @@
 
         function addMergeFiles(files) {
             files.forEach(file => {
-                if (file.type === 'application/pdf' && file.size <= 50 * 1024 * 1024) {
+                if ((file.type === 'application/pdf' || file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/jpg') && file.size <= 50 * 1024 * 1024) {
                     selectedMergeFiles.push(file);
                 }
             });
@@ -1058,7 +1063,7 @@
             mergeFilesList.innerHTML = selectedMergeFiles.map((file, index) => `
                 <div class="merge-file-item" data-index="${index}">
                     <div class="file-info">
-                        <div class="file-icon">📄</div>
+                        <div class="file-icon">${file.type === 'application/pdf' ? '📄' : '🖼️'}</div>
                         <div class="file-details">
                             <div class="file-name">${file.name}</div>
                             <div class="file-size">${formatFileSize(file.size)}</div>
@@ -1077,8 +1082,8 @@
             const mergeButton = document.getElementById('mergeButton');
             mergeButton.disabled = selectedMergeFiles.length < 2;
             mergeButton.textContent = selectedMergeFiles.length < 2 ? 
-                'Selecione pelo menos 2 PDFs' : 
-                `Mesclar ${selectedMergeFiles.length} PDFs`;
+                'Selecione pelo menos 2 arquivos' : 
+                `Mesclar ${selectedMergeFiles.length} arquivos`;
         }
 
         async function mergeFiles() {
