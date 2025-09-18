@@ -261,3 +261,37 @@ class PDFCompressor:
                     
         except Exception as e:
             return False, f"Erro inesperado na compressão máxima: {str(e)}", {}
+    
+    @staticmethod
+    def compress_pdf(input_path: str, compression_type: str) -> Tuple[bool, str, dict, str]:
+        """Função principal de compressão que chama a função específica baseada no tipo"""
+        try:
+            # Validar arquivo de entrada
+            is_valid, validation_msg = PDFCompressor.validate_pdf(input_path)
+            if not is_valid:
+                return False, validation_msg, {}, ""
+            
+            # Criar arquivo de saída temporário
+            output_path = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf').name
+            
+            # Chamar função específica baseada no tipo
+            if compression_type == 'optimized':
+                success, message, stats = PDFCompressor.compress_pdf_optimized(input_path, output_path)
+            elif compression_type == 'maximum':
+                success, message, stats = PDFCompressor.compress_pdf_maximum(input_path, output_path)
+            else:
+                return False, f"Tipo de compressão inválido: {compression_type}", {}, ""
+            
+            if success:
+                return True, message, stats, output_path
+            else:
+                # Limpar arquivo de saída em caso de erro
+                try:
+                    if os.path.exists(output_path):
+                        os.unlink(output_path)
+                except:
+                    pass
+                return False, message, stats, ""
+                
+        except Exception as e:
+            return False, f"Erro na compressão: {str(e)}", {}, ""
