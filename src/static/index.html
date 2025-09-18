@@ -1030,11 +1030,33 @@
         }
 
         function addMergeFiles(files) {
+            let rejectedFiles = [];
+            
             files.forEach(file => {
-                if ((file.type === 'application/pdf' || file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/jpg') && file.size <= 50 * 1024 * 1024) {
+                // Validar tipo de arquivo (PDF, PNG, JPG/JPEG)
+                const fileName = file.name.toLowerCase();
+                const validMimeTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+                const validExtensions = ['.pdf', '.png', '.jpg', '.jpeg'];
+                
+                const hasValidMimeType = validMimeTypes.includes(file.type);
+                const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+                
+                if ((hasValidMimeType || hasValidExtension) && file.size <= 50 * 1024 * 1024) {
                     selectedMergeFiles.push(file);
+                } else {
+                    if (file.size > 50 * 1024 * 1024) {
+                        rejectedFiles.push(`${file.name} (muito grande)`);
+                    } else {
+                        rejectedFiles.push(`${file.name} (tipo não suportado)`);
+                    }
                 }
             });
+            
+            // Mostrar feedback sobre arquivos rejeitados
+            if (rejectedFiles.length > 0) {
+                console.log('Arquivos rejeitados:', rejectedFiles);
+                // Opcional: mostrar notificação discreta
+            }
             updateMergeFilesList();
             updateMergeButton();
         }
