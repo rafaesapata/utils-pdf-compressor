@@ -3,7 +3,7 @@ import tempfile
 from typing import List, Tuple
 from pypdf import PdfWriter, PdfReader
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import letter, A4, landscape, portrait
 from PIL import Image
 import re
 
@@ -72,8 +72,17 @@ class PDFMerger:
                 # Obter dimensões da imagem
                 img_width, img_height = img.size
                 
-                # Calcular tamanho da página (A4 como padrão)
-                page_width, page_height = A4
+                # Detectar orientação da imagem e ajustar página
+                is_landscape = img_width > img_height
+                
+                if is_landscape:
+                    # Imagem paisagem -> página paisagem
+                    page_width, page_height = A4[1], A4[0]  # Inverter dimensões (842 x 595)
+                    pagesize = landscape(A4)
+                else:
+                    # Imagem retrato -> página retrato
+                    page_width, page_height = A4  # Manter dimensões (595 x 842)
+                    pagesize = portrait(A4)
                 
                 # Calcular escala para ajustar a imagem na página mantendo proporção
                 scale_x = page_width / img_width
@@ -88,8 +97,8 @@ class PDFMerger:
                 x = (page_width - final_width) / 2
                 y = (page_height - final_height) / 2
                 
-                # Criar PDF
-                c = canvas.Canvas(output_path, pagesize=A4)
+                # Criar PDF com orientação correta
+                c = canvas.Canvas(output_path, pagesize=pagesize)
                 
                 # Salvar imagem temporariamente como JPEG para reportlab
                 with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_img:
